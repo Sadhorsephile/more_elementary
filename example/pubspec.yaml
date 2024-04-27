@@ -1,0 +1,22 @@
+name: counter
+description: A new Flutter project.
+version: 1.0.0+1
+publish_to: none
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  more_elementary:
+    path: ../
+  union_state: 0.0.3
+  flutter:
+    sdk: flutter
+
+  provider: ^6.0.2
+
+dev_dependencies:
+  mjk_lint_rules: ^2.0.0
+
+flutter:
+  uses-material-design: true
