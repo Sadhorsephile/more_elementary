@@ -1,10 +1,12 @@
 import 'package:counter/feature/domain/entity/todo_dto.dart';
 import 'package:counter/feature/domain/i_todo_service.dart';
-import 'package:counter/feature/presentation/i_example_wm.dart';
+import 'package:counter/feature/presentation/screen/i_example_wm.dart';
+import 'package:counter/feature/presentation/widgets/some_component_wm.dart';
 import 'package:counter/utils/debouncer.dart';
 import 'package:flutter/material.dart';
 import 'package:more_elementary/elementary.dart';
 import 'package:union_state/union_state.dart';
+
 
 class ExampleWM extends WidgetModel implements IExampleWM {
   @override
@@ -20,8 +22,12 @@ class ExampleWM extends WidgetModel implements IExampleWM {
   @override
   final filterController = TextEditingController();
 
+  @override
+  final ISomeComponentWM someComponentWM;
+
   ExampleWM({
     required this.title,
+    required this.someComponentWM,
     required ITodoService todoService,
   }) : _todoService = todoService;
 

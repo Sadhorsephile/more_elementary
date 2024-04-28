@@ -1,12 +1,13 @@
 import 'package:counter/feature/domain/entity/todo_dto.dart';
-import 'package:counter/feature/presentation/i_example_wm.dart';
+import 'package:counter/feature/presentation/screen/i_example_wm.dart';
+import 'package:counter/feature/presentation/widgets/some_component.dart';
 import 'package:flutter/material.dart';
 import 'package:more_elementary/elementary.dart';
 import 'package:union_state/union_state.dart';
 
 class ExampleScreen extends ElementaryWidget<IExampleWM> {
-  const ExampleScreen({
-    required super.widgetModel,
+  const ExampleScreen(
+    super.widgetModel, {
     super.key,
   });
 
@@ -41,7 +42,7 @@ class _TodosList extends StatelessWidget with WMContext<IExampleWM> {
           },
         );
       },
-      loadingBuilder: (_, __) => const Center(child: CircularProgressIndicator()),
+      loadingBuilder: (_, __) => Center(child: SomeComponent(wm(context).someComponentWM)),
       failureBuilder: (_, error, __) => const _ErrorWidget(),
     );
   }

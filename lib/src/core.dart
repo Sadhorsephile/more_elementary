@@ -165,7 +165,7 @@ abstract interface class IWidgetModel {
 ///
 /// ## wm
 /// An instance of the [WidgetModel] must be provided to the widget
-/// constructor as [widgetModel] property. [WidgetModel] must implement [IWidgetModel] interface.
+/// constructor. [WidgetModel] must implement [IWidgetModel] interface.
 ///
 /// ## The part of Elementary Lifecycle
 /// This widget is a starting and updating configuration for the [WidgetModel].
@@ -180,20 +180,17 @@ abstract interface class IWidgetModel {
 /// See also: [StatelessWidget], [StatefulWidget], [InheritedWidget].
 abstract class ElementaryWidget<I extends IWidgetModel> extends Widget with WMContext<I> {
   /// Instance of the [WidgetModel] for this widget.
-  final I widgetModel;
+  final I _widgetModel;
 
   /// Creates an instance of ElementaryWidget.
-  const ElementaryWidget({
-    required this.widgetModel,
-    Key? key,
-  }) : super(key: key);
+  const ElementaryWidget(this._widgetModel, {super.key});
 
   /// Creates a [Elementary] to manage this widget's location in the tree.
   ///
   /// It is uncommon for subclasses to override this method.
   @override
   Elementary createElement() {
-    return Elementary(this, widgetModel);
+    return Elementary(this, _widgetModel);
   }
 
   /// Builds the user interface.
@@ -207,17 +204,16 @@ abstract class ElementaryWidget<I extends IWidgetModel> extends Widget with WMCo
   }
 }
 
-
 /// The basic implementation of the entity responsible for all
 /// presentation logic, providing properties and data for the widget,
 /// and keep relations with the business logic. Business logic can be represented by
 /// dependencies of the [WidgetModel].
 ///
-/// [WidgetModel] is a working horse of the Elementary library. 
+/// [WidgetModel] is a working horse of the Elementary library.
 /// So the inheritors of [WidgetModel] parameterized by an inheritor of the ElementaryWidget.
 /// This mean that this WidgetModel subclass encapsulate
 /// all required logic for the concrete ElementaryWidget subclass that
-/// mentioned as parameter and only for it. 
+/// mentioned as parameter and only for it.
 ///
 /// It is common for inheritors to implement the expanded from [IWidgetModel]
 /// interface that describes special contract for the relevant
@@ -495,5 +491,21 @@ final class Elementary extends ComponentElement {
         defaultValue: null,
       ),
     );
+  }
+}
+
+/// Mock that helps to prevent [NoSuchMethodError] exception when the
+/// WidgetModel is mocked.
+@visibleForTesting
+mixin MockWidgetModelMixin implements WidgetModel {
+  @override
+  set _element(BuildContext? _) {}
+
+  @override
+  set _widget(ElementaryWidget? _) {}
+
+  @override
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+    return 'MockWidgetModel';
   }
 }
