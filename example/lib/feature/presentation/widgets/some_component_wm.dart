@@ -4,7 +4,7 @@ abstract interface class ISomeComponentWM implements IWidgetModel {
   String get title;
 }
 
-class SomeComponentWM extends WidgetModel implements ISomeComponentWM {
+class SomeComponentWM extends LiteWidgetModel implements ISomeComponentWM {
   @override
   final String title;
 

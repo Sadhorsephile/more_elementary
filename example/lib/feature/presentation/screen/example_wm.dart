@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:counter/feature/domain/entity/todo_dto.dart';
 import 'package:counter/feature/domain/i_todo_service.dart';
 import 'package:counter/feature/presentation/screen/i_example_wm.dart';
@@ -7,8 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:more_elementary/elementary.dart';
 import 'package:union_state/union_state.dart';
 
-
-class ExampleWM extends WidgetModel implements IExampleWM {
+class ExampleWM extends LiteWidgetModel implements IExampleWM {
   @override
   final String title;
 
@@ -40,7 +41,7 @@ class ExampleWM extends WidgetModel implements IExampleWM {
   @override
   void dispose() {
     filterController.dispose();
-    todos.dispose();  
+    todos.dispose();
     super.dispose();
   }
 
@@ -51,19 +52,40 @@ class ExampleWM extends WidgetModel implements IExampleWM {
 
   @override
   Future<void> switchCompleted(String id) async {
-    todos.loading();
-    await _todoService.switchCompleted(id);
-    loadTodos().ignore();
+    return handleCall(
+      operation: () {
+        todos.loading();
+        return _todoService.switchCompleted(id);
+      },
+      onSuccess: (_) => loadTodos(),
+      onError: (_, __) {
+        todos.failure();
+      },
+      displayableError: true,
+    );
+  }
+
+  @override
+  void logError(Object error, StackTrace? stackTrace, {required bool displayableError}) {
+    log('Error: $error', stackTrace: stackTrace, error: error);
+
+    if (displayableError) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $error')));
+    }
   }
 
   @override
   Future<void> loadTodos() async {
-    try {
-      todos.loading(todos.value.data);
-      final data = await _todoService.getTodos(filterController.text.trim());
-      todos.content(data);
-    } on Exception catch (e) {
-      todos.failure(e, todos.value.data);
-    }
+    await handleCall(
+      displayableError: true,
+      operation: () async {
+        todos.loading(todos.value.data);
+        return _todoService.getTodos(filterController.text.trim());
+      },
+      onError: (e, _) {
+        todos.failure();
+      },
+      onSuccess: todos.content,
+    );
   }
 }

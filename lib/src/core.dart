@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:more_elementary/elementary.dart';
 
 /// A basic interface for every [WidgetModel].
 ///
@@ -206,14 +209,17 @@ abstract class ElementaryWidget<I extends IWidgetModel> extends Widget with WMCo
 
 /// The basic implementation of the entity responsible for all
 /// presentation logic, providing properties and data for the widget,
-/// and keep relations with the business logic. Business logic can be represented by
-/// dependencies of the [WidgetModel].
+/// and keep relations with the business logic. Business logic represented in
+/// the form of [ElementaryModel].
 ///
-/// [WidgetModel] is a working horse of the Elementary library.
-/// So the inheritors of [WidgetModel] parameterized by an inheritor of the ElementaryWidget.
-/// This mean that this WidgetModel subclass encapsulate
+/// [WidgetModel] is a working horse of the Elementary library. It unites the
+/// trio of 'widget - widget model - model'. So the inheritors of [WidgetModel]
+/// parameterized by an inheritor of the ElementaryWidget and an inheritor
+/// of the ElementaryModel. This mean that this WidgetModel subclass encapsulate
 /// all required logic for the concrete ElementaryWidget subclass that
-/// mentioned as parameter and only for it.
+/// mentioned as parameter and only for it. Also this WidgetModel subclass uses
+/// exactly the mentioned ElementaryModel subclass as an available contract of
+/// business logic.
 ///
 /// It is common for inheritors to implement the expanded from [IWidgetModel]
 /// interface that describes special contract for the relevant
@@ -264,7 +270,21 @@ abstract class ElementaryWidget<I extends IWidgetModel> extends Widget with WMCo
 /// [reassemble] called whenever the application is reassembled during
 /// debugging, for example during the hot reload.
 ///
-abstract class WidgetModel<W extends ElementaryWidget> with Diagnosticable implements IWidgetModel {
+/// [onErrorHandle] called when the [ElementaryModel] handle error with the
+/// [ElementaryModel.handleError] method. Can be useful for general handling
+/// errors such as showing snack-bars.
+abstract class WidgetModel<W extends ElementaryWidget, M extends ElementaryModel>
+    with Diagnosticable
+    implements IWidgetModel {
+  final M _model;
+
+  /// Instance of [ElementaryModel] for this [WidgetModel].
+  ///
+  /// The only business logic dependency that is needed for the [WidgetModel].
+  @protected
+  @visibleForTesting
+  M get model => _model;
+
   /// Widget that uses this [WidgetModel] for building part of the user interface.
   ///
   /// The [WidgetModel] has an associated [ElementaryWidget].
@@ -310,12 +330,21 @@ abstract class WidgetModel<W extends ElementaryWidget> with Diagnosticable imple
   ElementaryWidget? _widget;
 
   /// Creates an instance of the [WidgetModel].
-  WidgetModel();
+  WidgetModel(this._model);
 
+  /// Called while the first build for initialization of this [WidgetModel].
+  ///
+  /// This method is called only ones for the instance of [WidgetModel]
+  /// during its lifecycle.
   @override
   @protected
+  @mustCallSuper
   @visibleForTesting
-  void initWidgetModel() {}
+  void initWidgetModel() {
+    _model
+      ..init()
+      .._wmHandler = onErrorHandle;
+  }
 
   /// Called whenever the widget configuration is changed.
   @override
@@ -323,28 +352,107 @@ abstract class WidgetModel<W extends ElementaryWidget> with Diagnosticable imple
   @visibleForTesting
   void didUpdateWidget(ElementaryWidget oldWidget) {}
 
+  /// Called when a dependency (by Build Context) of this Widget Model changes.
+  ///
+  /// For example, if Widget Model has reference on [InheritedWidget].
+  /// This widget can change and method will called to notify about change.
+  ///
+  /// This method is also called immediately after [initWidgetModel].
   @override
   @protected
   @visibleForTesting
   void didChangeDependencies() {}
 
+  /// Method for handling asynchronous operations.
+  /// This method is a common place for handling errors. If the operation fails,
+  /// the error will be passed to the [onError] callback (if it was provided) and
+  /// the [logError] method will be called.
+  ///
+  /// [operation] - the asynchronous operation that should be handled.
+  /// [onSuccess] - the callback that will be called if the operation is successful.
+  /// [onError] - the callback that will be called if the operation fails.
+  Future<void> handleCall<T>({
+    required Future<T> Function() operation,
+    required void Function(T) onSuccess,
+    void Function(Object error, StackTrace stackTrace)? onError,
+    bool displayableError = false,
+  }) async {
+    try {
+      final result = await operation();
+      onSuccess(result);
+    } on Exception catch (error, stackTrace) {
+      onError?.call(error, stackTrace);
+      logError(error, stackTrace, displayableError: displayableError);
+    }
+  }
+
+  /// Called whenever [handleCall] is called with an error. You can use this
+  /// method for logging errors.
+  void logError(Object error, StackTrace? stackTrace, {required bool displayableError}) {}
+
+  /// Called whenever [ElementaryModel.handleError] is called.
+  ///
+  /// This method is a common place for presentation handling error like a
+  /// showing a snack-bar, etc.
+  @protected
+  @mustCallSuper
+  @visibleForTesting
+  void onErrorHandle(Object error, StackTrace? stackTrace) {
+    logError(error, stackTrace, displayableError: false);
+  }
+
+  /// Called when this [WidgetModel] and [Elementary] are removed from the tree.
+  ///
+  /// Implementations of this method should end with a call to the inherited
+  /// method, as in `super.deactivate()`.
   @override
   @protected
   @mustCallSuper
   @visibleForTesting
   void deactivate() {}
 
+  /// Called when this [WidgetModel] and [Elementary] are reinserted into
+  /// the tree after having been removed via [deactivate].
+  ///
+  /// In most cases, after a [WidgetModel] has been deactivated, it is not
+  /// reinserted into the tree, and its [dispose] method will be called to
+  /// signal that it is ready to be garbage collected.
+  ///
+  /// In some cases, however, after a [WidgetModel] has been deactivated,
+  /// it will reinserted it into another part of the tree (e.g., if there is a
+  /// subtree uses a [GlobalKey] that match with key of the [Elementary]
+  /// linked with this [WidgetModel]).
+  ///
+  /// This method does not called the first time a WidgetModel object
+  /// is inserted into the tree. Instead, calls [initWidgetModel] in
+  /// that situation.
+  ///
+  /// Implementations of this method should start with a call to the inherited
+  /// method, as in `super.activate()`.
   @override
   @protected
   @mustCallSuper
   @visibleForTesting
   void activate() {}
 
+  /// Called when [Elementary] with this [WidgetModel] is removed from the tree
+  /// permanently.
+  /// Should be used for preparation to be garbage collected.
   @override
   @protected
+  @mustCallSuper
   @visibleForTesting
-  void dispose() {}
+  void dispose() {
+    _model.dispose();
+  }
 
+  /// Called whenever the application is reassembled during debugging, for
+  /// example during hot reload. Most cases therefore do not need to do
+  /// anything in the [reassemble] method.
+  ///
+  /// See also:
+  ///  * [Element.reassemble]
+  ///  * [BindingBase.reassembleApplication]
   @override
   @protected
   @mustCallSuper
@@ -366,6 +474,11 @@ abstract class WidgetModel<W extends ElementaryWidget> with Diagnosticable imple
   void setupTestElement(BuildContext? testElement) {
     _element = testElement;
   }
+}
+
+abstract class LiteWidgetModel<W extends ElementaryWidget> extends WidgetModel<W, StubModel> {
+  /// @nodoc
+  LiteWidgetModel() : super(StubModel());
 }
 
 /// InheritedWidget provides access to the [WidgetModel] for all descendants of [ElementaryWidget].
@@ -509,3 +622,58 @@ mixin MockWidgetModelMixin implements WidgetModel {
     return 'MockWidgetModel';
   }
 }
+
+/// The base class for an entity that contains a business logic required for
+/// a specific inheritor of [ElementaryWidget].
+///
+/// You can implement this class freestyle. It may be a bunch of methods,
+/// streams or something else. Also it is not a mandatory for business logic
+/// to be implemented right inside the class, this model can be proxy for other
+/// responsible entities with business logic.
+///
+/// This class can take [ErrorHandler] as dependency for centralize handling
+/// error (for example logging). The [handleError] method can be used for it.
+/// When the [handleError] is called passed [ErrorHandler] handles exception.
+/// Also the [WidgetModel] is notified about this exception with
+/// [WidgetModel.onErrorHandle] method.
+///
+/// ## The part of Elementary Lifecycle
+///
+abstract class ElementaryModel {
+  final ErrorHandler? _errorHandler;
+  void Function(Object, StackTrace?)? _wmHandler;
+
+  /// Create an instance of ElementaryModel.
+  ElementaryModel({ErrorHandler? errorHandler}) : _errorHandler = errorHandler;
+
+  /// Can be used for send [error] to [ErrorHandler] if it defined and notify
+  /// [WidgetModel].
+  @protected
+  @mustCallSuper
+  @visibleForTesting
+  void handleError(Object error, {StackTrace? stackTrace}) {
+    _errorHandler?.handleError(error, stackTrace: stackTrace);
+    _wmHandler?.call(error, stackTrace);
+  }
+
+  /// Initializes [ElementaryModel].
+  ///
+  /// Called once before the first build of the [ElementaryWidget].
+  void init() {}
+
+  /// Prepares the [ElementaryModel] to be completely destroyed.
+  ///
+  /// Called once when [Elementary] going to be destroyed. Should be used for
+  /// clearing links, subscriptions, and preparation to be garbage collected.
+  void dispose() {}
+
+  /// Method for setup ElementaryModel for testing.
+  /// This method can be used to WidgetModels error handler.
+  @visibleForTesting
+  // ignore: use_setters_to_change_properties
+  void setupWmHandler(void Function(Object, StackTrace?)? function) {
+    _wmHandler = function;
+  }
+}
+
+class StubModel extends ElementaryModel {}
