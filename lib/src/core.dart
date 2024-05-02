@@ -374,11 +374,16 @@ abstract class WidgetModel<W extends ElementaryWidget, M extends ElementaryModel
   Future<void> handleCall<T>({
     required Future<T> Function() operation,
     required void Function(T) onSuccess,
-    void Function(Object error, StackTrace stackTrace)? onError,
+    void Function(Object error, StackTrace? stackTrace)? onError,
+    bool Function(T)? isResultError,
     bool displayableError = false,
   }) async {
     try {
       final result = await operation();
+      if (isResultError?.call(result) ?? false) {
+        if (result is Object) logError(result, null, displayableError: displayableError);
+        return;
+      }
       onSuccess(result);
     } on Exception catch (error, stackTrace) {
       onError?.call(error, stackTrace);
