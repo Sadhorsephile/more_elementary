@@ -20,9 +20,12 @@ void main() {
     when(() => wm.someComponentWM).thenReturn(someComponentWM);
     when(() => wm.title).thenReturn('title');
     when(() => wm.filterController).thenReturn(TextEditingController(text: 'filter'));
-    when(() => wm.todoData).thenReturn(UnionStateNotifier.loading());
+    when(() => wm.todoData).thenReturn(UnionStateNotifier.failure());
     when(() => someComponentWM.title).thenReturn('...loading');
   });
 
-  testWidget(widgetBuilder: (_, __) => ExampleScreen(wm));
+  testWidget(
+    widgetBuilder: (_, __) => ExampleScreen(wm),
+    customPump: (p0) => p0.pumpAndSettle(const Duration(milliseconds: 500)),
+  );
 }
