@@ -5,11 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:more_elementary/elementary.dart';
 import 'package:union_state/union_state.dart';
 
-abstract interface class IExampleWM implements IWidgetModel {
+abstract interface class IExampleBlocWM implements IWidgetModel {
   TextEditingController get filterController;
   String get title;
-  ValueListenable<UnionState<List<TodoDto>>> get todos;
+  ValueListenable<UnionState<List<TodoDto>>> get todoData;
   ISomeComponentWM get someComponentWM;
+  ValueListenable<List<String>> get processingStatusTodoIds;
 
   void switchCompleted(String id);
   void loadTodos();

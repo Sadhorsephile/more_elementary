@@ -1,6 +1,6 @@
-import 'package:counter/feature/domain/i_todo_service.dart';
-import 'package:counter/feature/presentation/screen/example_screen.dart';
-import 'package:counter/feature/presentation/screen/example_wm.dart';
+import 'package:counter/feature/domain/service/i_todo_service.dart';
+import 'package:counter/feature/presentation/screen/example/example_screen.dart';
+import 'package:counter/feature/presentation/screen/example/example_wm.dart';
 import 'package:counter/feature/presentation/widgets/some_component_wm.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

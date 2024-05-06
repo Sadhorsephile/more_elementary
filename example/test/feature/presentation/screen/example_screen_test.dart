@@ -1,5 +1,5 @@
-import 'package:counter/feature/presentation/screen/example_screen.dart';
-import 'package:counter/feature/presentation/screen/i_example_wm.dart';
+import 'package:counter/feature/presentation/screen/example/example_screen.dart';
+import 'package:counter/feature/presentation/screen/example/i_example_wm.dart';
 import 'package:counter/feature/presentation/widgets/some_component_wm.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,7 +20,7 @@ void main() {
     when(() => wm.someComponentWM).thenReturn(someComponentWM);
     when(() => wm.title).thenReturn('title');
     when(() => wm.filterController).thenReturn(TextEditingController(text: 'filter'));
-    when(() => wm.todos).thenReturn(UnionStateNotifier.loading());
+    when(() => wm.todoData).thenReturn(UnionStateNotifier.loading());
     when(() => someComponentWM.title).thenReturn('...loading');
   });
 

@@ -363,48 +363,13 @@ abstract class WidgetModel<W extends ElementaryWidget, M extends ElementaryModel
   @visibleForTesting
   void didChangeDependencies() {}
 
-  /// Method for handling asynchronous operations.
-  /// This method is a common place for handling errors. If the operation fails,
-  /// the error will be passed to the [onError] callback (if it was provided) and
-  /// the [logError] method will be called.
-  ///
-  /// [operation] - the asynchronous operation that should be handled.
-  /// [onSuccess] - the callback that will be called if the operation is successful.
-  /// [onError] - the callback that will be called if the operation fails.
-  Future<void> handleCall<T>({
-    required Future<T> Function() operation,
-    required void Function(T) onSuccess,
-    void Function(Object error, StackTrace? stackTrace)? onError,
-    bool Function(T)? isResultError,
-    bool displayableError = false,
-  }) async {
-    try {
-      final result = await operation();
-      if (isResultError?.call(result) ?? false) {
-        if (result is Object) logError(result, null, displayableError: displayableError);
-        return;
-      }
-      onSuccess(result);
-    } on Exception catch (error, stackTrace) {
-      onError?.call(error, stackTrace);
-      logError(error, stackTrace, displayableError: displayableError);
-    }
-  }
-
-  /// Called whenever [handleCall] is called with an error. You can use this
-  /// method for logging errors.
-  void logError(Object error, StackTrace? stackTrace, {required bool displayableError}) {}
-
   /// Called whenever [ElementaryModel.handleError] is called.
   ///
   /// This method is a common place for presentation handling error like a
   /// showing a snack-bar, etc.
   @protected
-  @mustCallSuper
   @visibleForTesting
-  void onErrorHandle(Object error, StackTrace? stackTrace) {
-    logError(error, stackTrace, displayableError: false);
-  }
+  void onErrorHandle(Object error, StackTrace? stackTrace) {}
 
   /// Called when this [WidgetModel] and [Elementary] are removed from the tree.
   ///
@@ -481,9 +446,12 @@ abstract class WidgetModel<W extends ElementaryWidget, M extends ElementaryModel
   }
 }
 
-abstract class LiteWidgetModel<W extends ElementaryWidget> extends WidgetModel<W, StubModel> {
+/// Lite version of [WidgetModel] that doesn't require a model.
+/// It can be used for simple widgets that don't need a business logic or use another
+/// approach for business logic (e.g. BLoC, services, etc.).
+abstract class LiteWidgetModel<W extends ElementaryWidget> extends WidgetModel<W, _StubModel> {
   /// @nodoc
-  LiteWidgetModel() : super(StubModel());
+  LiteWidgetModel() : super(_StubModel());
 }
 
 /// InheritedWidget provides access to the [WidgetModel] for all descendants of [ElementaryWidget].
@@ -681,4 +649,5 @@ abstract class ElementaryModel {
   }
 }
 
-class StubModel extends ElementaryModel {}
+
+class _StubModel extends ElementaryModel {}

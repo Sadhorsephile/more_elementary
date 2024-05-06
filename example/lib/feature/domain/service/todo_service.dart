@@ -1,6 +1,6 @@
 import 'package:counter/feature/domain/entity/todo_dto.dart';
-import 'package:counter/feature/domain/i_todo_service.dart';
 import 'package:counter/feature/domain/mock_todos.dart';
+import 'package:counter/feature/domain/service/i_todo_service.dart';
 
 class TodoService implements ITodoService {
   final _pseudoNetworkTodos = mockTodos;

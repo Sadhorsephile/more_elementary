@@ -7,10 +7,6 @@ class SomeComponent extends ElementaryWidget<ISomeComponentWM> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      color: Colors.blue,
-      child: Text(wm(context).title),
-    );
+    return const CircularProgressIndicator();
   }
 }
