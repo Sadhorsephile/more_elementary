@@ -19,7 +19,7 @@ class ExampleBlocEntry extends StatelessWidget {
       ExampleBlocWM(
         title: title,
         someComponentWM: SomeComponentWM(title: '...Loading'),
-        todoListBloc: TodoListBloc(service),
+        todoData: TodoListBloc(service),
         todoSwitchBloc: TodoSwitchBloc(service),
       ),
     );

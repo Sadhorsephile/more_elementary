@@ -1,9 +1,10 @@
+import 'package:counter/feature/domain/bloc/todo_list/todo_list_state.dart';
 import 'package:counter/feature/domain/entity/todo_dto.dart';
 import 'package:counter/feature/presentation/screen/example_bloc/i_example_bloc_wm.dart';
 import 'package:counter/feature/presentation/widgets/some_component.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:more_elementary/elementary.dart';
-import 'package:union_state/union_state.dart';
 
 class ExampleBlocScreen extends ElementaryWidget<IExampleBlocWM> {
   const ExampleBlocScreen(
@@ -31,25 +32,25 @@ class _TodosList extends StatelessWidget with WMContext<IExampleBlocWM> {
 
   @override
   Widget build(BuildContext context) {
-    return UnionStateListenableBuilder(
-      unionStateListenable: wm(context).todoData,
-      builder: (context, todos) {
-        return ValueListenableBuilder(
-          valueListenable: wm(context).processingStatusTodoIds,
-          builder: (_, processingIds, __) => ListView.builder(
-            itemCount: todos.length,
-            itemBuilder: (context, index) {
-              final todo = todos[index];
-              return _TodoItem(
-                todo: todo,
-                processing: processingIds.contains(todo.id),
-              );
-            },
+    return BlocBuilder<StateStreamable<TodoListState>, TodoListState>(
+      bloc: wm(context).todoData,
+      builder: (_, state) => switch (state) {
+        LoadingTodoListState() => Center(child: SomeComponent(wm(context).someComponentWM)),
+        LoadedTodoListState(:final todos) => ValueListenableBuilder(
+            valueListenable: wm(context).processingStatusTodoIds,
+            builder: (_, processingIds, __) => ListView.builder(
+              itemCount: todos.length,
+              itemBuilder: (context, index) {
+                final todo = todos[index];
+                return _TodoItem(
+                  todo: todo,
+                  processing: processingIds.contains(todo.id),
+                );
+              },
+            ),
           ),
-        );
+        ErrorTodoListState() => const _ErrorWidget(),
       },
-      loadingBuilder: (_, __) => Center(child: SomeComponent(wm(context).someComponentWM)),
-      failureBuilder: (_, error, __) => const _ErrorWidget(),
     );
   }
 }
@@ -108,12 +109,12 @@ class _FilterPanel extends StatelessWidget with WMContext<IExampleBlocWM> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(8),
-      child: ValueListenableBuilder(
-        valueListenable: wm(context).todoData,
-        builder: (_, todos, __) => TextField(
+      child: BlocBuilder<StateStreamable<TodoListState>, TodoListState>(
+        bloc: wm(context).todoData,
+        builder: (_, state) => TextField(
           controller: wm(context).filterController,
-          enabled: switch (todos) {
-            UnionStateFailure() => false,
+          enabled: switch (state) {
+            ErrorTodoListState() => false,
             _ => true,
           },
           onChanged: (_) => wm(context).onTextChanged(),

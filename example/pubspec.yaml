@@ -17,6 +17,7 @@ dependencies:
   surf_widget_test_composer: ^0.0.6
   mocktail: ^1.0.3
   bloc: ^8.1.4
+  flutter_bloc: ^8.1.5
 
 dev_dependencies:
   flutter_test:
