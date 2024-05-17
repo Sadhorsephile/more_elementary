@@ -7,15 +7,15 @@ import 'package:union_state/union_state.dart';
 
 class ExampleScreen extends ElementaryWidget<IExampleWM> {
   const ExampleScreen(
-    super.widgetModel, {
+    super.widgetModelFactory, {
     super.key,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, IExampleWM wm) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(wm(context).title),
+        title: Text(wm.title),
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(48),
           child: _FilterPanel(),
@@ -26,13 +26,13 @@ class ExampleScreen extends ElementaryWidget<IExampleWM> {
   }
 }
 
-class _TodosList extends StatelessWidget with WMContext<IExampleWM> {
+class _TodosList extends StatelessWidget with WMStless<IExampleWM> {
   const _TodosList();
 
   @override
-  Widget build(BuildContext context) {
+  Widget buildWithWm(BuildContext context, IExampleWM wm) {
     return UnionStateListenableBuilder(
-      unionStateListenable: wm(context).todoData,
+      unionStateListenable: wm.todoData,
       builder: (context, todos) {
         return ListView.builder(
           itemCount: todos.length,
@@ -42,17 +42,17 @@ class _TodosList extends StatelessWidget with WMContext<IExampleWM> {
           },
         );
       },
-      loadingBuilder: (_, __) => Center(child: SomeComponent(wm(context).someComponentWM)),
+      loadingBuilder: (_, __) => Center(child: SomeComponent(wm.someComponentWM)),
       failureBuilder: (_, error, __) => const _ErrorWidget(),
     );
   }
 }
 
-class _ErrorWidget extends StatelessWidget with WMContext<IExampleWM> {
+class _ErrorWidget extends StatelessWidget with WMStless<IExampleWM> {
   const _ErrorWidget();
 
   @override
-  Widget build(BuildContext context) {
+  Widget buildWithWm(BuildContext context, IExampleWM wm) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -67,7 +67,7 @@ class _ErrorWidget extends StatelessWidget with WMContext<IExampleWM> {
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () => wm(context).loadTodos(),
+            onPressed: () => wm.loadTodos(),
             child: const Text('Retry'),
           ),
         ],
@@ -76,38 +76,38 @@ class _ErrorWidget extends StatelessWidget with WMContext<IExampleWM> {
   }
 }
 
-class _TodoItem extends StatelessWidget with WMContext<IExampleWM> {
+class _TodoItem extends StatelessWidget with WMStless<IExampleWM> {
   final TodoDto todo;
   const _TodoItem({required this.todo});
 
   @override
-  Widget build(BuildContext context) {
+  Widget buildWithWm(BuildContext context, IExampleWM wm) {
     return ListTile(
       title: Text(todo.title),
       trailing: Checkbox(
         value: todo.isCompleted,
-        onChanged: (_) => wm(context).switchCompleted(todo.id),
+        onChanged: (_) => wm.switchCompleted(todo.id),
       ),
     );
   }
 }
 
-class _FilterPanel extends StatelessWidget with WMContext<IExampleWM> {
+class _FilterPanel extends StatelessWidget with WMStless<IExampleWM> {
   const _FilterPanel();
 
   @override
-  Widget build(BuildContext context) {
+  Widget buildWithWm(BuildContext context, IExampleWM wm) {
     return Padding(
       padding: const EdgeInsets.all(8),
       child: ValueListenableBuilder(
-        valueListenable: wm(context).todoData,
+        valueListenable: wm.todoData,
         builder: (_, todos, __) => TextField(
-          controller: wm(context).filterController,
+          controller: wm.filterController,
           enabled: switch (todos) {
             UnionStateFailure() => false,
             _ => true,
           },
-          onChanged: (_) => wm(context).onTextChanged(),
+          onChanged: (_) => wm.onTextChanged(),
           decoration: const InputDecoration(
             labelText: 'Filter',
             border: OutlineInputBorder(),

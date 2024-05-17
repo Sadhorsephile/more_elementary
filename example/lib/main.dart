@@ -1,6 +1,6 @@
 import 'package:counter/feature/domain/service/i_todo_service.dart';
 import 'package:counter/feature/domain/service/todo_service.dart';
-import 'package:counter/feature/presentation/screen/example_bloc/example_bloc_entry.dart';
+import 'package:counter/feature/presentation/screen/example/example_entry.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
       ),
       home: Provider<ITodoService>(
         create: (_) => TodoService(),
-        child: const ExampleBlocEntry(title: 'TODOs'),
+        child: const ExampleEntry(title: 'TODOs'),
       ),
     );
   }

@@ -6,7 +6,7 @@ class SomeComponent extends ElementaryWidget<ISomeComponentWM> {
   const SomeComponent(super.widgetModel, {super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, ISomeComponentWM wm) {
     return const CircularProgressIndicator();
   }
 }

@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:more_elementary/elementary.dart';
 import 'package:union_state/union_state.dart';
 
-
 class ExampleWM extends LiteWidgetModel implements IExampleWM {
   @override
   final String title;
@@ -23,7 +22,7 @@ class ExampleWM extends LiteWidgetModel implements IExampleWM {
   final filterController = TextEditingController();
 
   @override
-  final ISomeComponentWM someComponentWM;
+  final WidgetModelFactory<ISomeComponentWM> someComponentWM;
 
   ExampleWM({
     required this.title,
@@ -40,7 +39,7 @@ class ExampleWM extends LiteWidgetModel implements IExampleWM {
   @override
   void dispose() {
     filterController.dispose();
-    todoData.dispose();  
+    todoData.dispose();
     super.dispose();
   }
 

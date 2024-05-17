@@ -10,7 +10,7 @@ abstract interface class IExampleWM implements IWidgetModel {
   String get title;
   ValueListenable<UnionState<List<TodoDto>>> get todoData;
 
-  ISomeComponentWM get someComponentWM;
+  WidgetModelFactory<ISomeComponentWM> get someComponentWM;
 
   void switchCompleted(String id);
   void loadTodos();

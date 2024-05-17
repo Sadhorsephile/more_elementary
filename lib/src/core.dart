@@ -4,6 +4,72 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:more_elementary/elementary.dart';
 
+/// Type for a factory function that is used to create
+/// an instance of [WidgetModel].
+///
+/// ## The part of Elementary Lifecycle
+/// The [WidgetModel] instance is created for the [ElementaryWidget] when it
+/// instantiate into the tree. Only in this moment the factory is called once(*)
+/// to get the instance of the [WidgetModel] and associate it with
+/// the [Elementary]. After this the [WidgetModel] will alive while
+/// the [Elementary] is alive. If [Elementary] updates the widget associated
+/// with it, the [WidgetModel] will not be recreated and continue work with
+/// the same state that has before the update. But the [WidgetModel] will be
+/// notified about the update by calling the method
+/// [WidgetModel.didUpdateWidget]. All needed state adjustments can be
+/// handle inside this method.
+///
+/// (*) Once per insert into the tree. As all other widgets, an instance of
+/// [ElementaryWidget] can be inserted many times. Every time the element and
+/// separate [WidgetModel] will be created for manage different state for every
+/// concrete inserts.
+///
+/// ## Examples
+/// {@tool snippet}
+///
+/// The following is a an example for the top-level factory function
+/// that creates dependencies right on the spot.
+///
+/// ```dart
+/// ExampleWidgetModel exampleWidgetModelFactory(BuildContext context) {
+///   final modelDependency = ModelDependency();
+///   final exampleModel = ExampleModel(modelDependency);
+///   return ExampleWidgetModel(exampleModel);
+/// }
+/// ```
+/// {@end-tool}
+///
+/// {@tool snippet}
+///
+/// The following is a an example for the top-level factory function
+/// that creates dependencies using one of the DI containers.
+///
+/// ```dart
+/// ExampleWidgetModel exampleWidgetModelFactory(BuildContext context) {
+///   final exampleModel = ContainerInstance.createExampleModel();
+///   return ExampleWidgetModel(exampleModel);
+/// }
+/// ```
+/// {@end-tool}
+///
+/// {@tool snippet}
+///
+/// The following is a an example for the top-level factory function
+/// that get dependencies using passed BuildContext.
+///
+/// ```dart
+/// ExampleWidgetModel exampleWidgetModelFactory(BuildContext context) {
+///   final modelDependency = ModelDependency();
+///   final exampleModel = ExampleModel(modelDependency);
+///   final widgetModelAnotherDependency = SomeWidget.of(context).getSomething;
+///   return ExampleWidgetModel(exampleModel, widgetModelAnotherDependency);
+/// }
+/// ```
+/// {@end-tool}
+typedef WidgetModelFactory<T extends IWidgetModel> = T Function(
+  BuildContext context,
+);
+
 /// A basic interface for every [WidgetModel].
 ///
 /// The general approach for the [WidgetModel] is implement interface that
@@ -30,10 +96,12 @@ import 'package:more_elementary/elementary.dart';
 /// ```
 /// {@end-tool}
 abstract interface class IWidgetModel {
-  ElementaryWidget? _widget;
-
   // ignore: unused_field
   BuildContext? _element;
+
+  ElementaryWidget? _widget;
+
+  ElementaryModel? _model;
 
   /// Called while the first build for initialization of this [WidgetModel].
   ///
@@ -166,9 +234,12 @@ abstract interface class IWidgetModel {
 /// ```
 /// {@end-tool}
 ///
-/// ## wm
-/// An instance of the [WidgetModel] must be provided to the widget
-/// constructor. [WidgetModel] must implement [IWidgetModel] interface.
+/// ## [wmFactory]
+/// An instance of the [WidgetModelFactory] must be provided to the widget
+/// constructor as [wmFactory] property. This is required to create
+/// the [WidgetModel] instance for this widget.
+/// You can use additional factories for different purpose. For example create
+/// a special one that returns a mock [WidgetModel] for the tests.
 ///
 /// ## The part of Elementary Lifecycle
 /// This widget is a starting and updating configuration for the [WidgetModel].
@@ -181,28 +252,31 @@ abstract interface class IWidgetModel {
 /// widgets those inflate to [ComponentElement].
 ///
 /// See also: [StatelessWidget], [StatefulWidget], [InheritedWidget].
-abstract class ElementaryWidget<I extends IWidgetModel> extends Widget with WMContext<I> {
-  /// Instance of the [WidgetModel] for this widget.
-  final I _widgetModel;
+abstract class ElementaryWidget<I extends IWidgetModel> extends Widget {
+  /// The factory function used to create a [WidgetModel].
+  final WidgetModelFactory wmFactory;
 
   /// Creates an instance of ElementaryWidget.
-  const ElementaryWidget(this._widgetModel, {super.key});
+  const ElementaryWidget(
+    this.wmFactory, {
+    Key? key,
+  }) : super(key: key);
 
   /// Creates a [Elementary] to manage this widget's location in the tree.
   ///
   /// It is uncommon for subclasses to override this method.
   @override
   Elementary createElement() {
-    return Elementary(this, _widgetModel);
+    return Elementary(this);
   }
 
   /// Builds the user interface.
-  Widget build(BuildContext context);
+  Widget build(BuildContext context, I wm);
 
   Widget _build(BuildContext context, I wm) {
     return WMInheritedWidget<I>(
       wm: wm,
-      child: Builder(builder: build),
+      child: Builder(builder: (_) => build(_, wm)),
     );
   }
 }
@@ -276,6 +350,7 @@ abstract class ElementaryWidget<I extends IWidgetModel> extends Widget with WMCo
 abstract class WidgetModel<W extends ElementaryWidget, M extends ElementaryModel>
     with Diagnosticable
     implements IWidgetModel {
+  @override
   final M _model;
 
   /// Instance of [ElementaryModel] for this [WidgetModel].
@@ -487,18 +562,46 @@ mixin WMContext<T extends IWidgetModel> on Widget {
   T wm(BuildContext context) => WMInheritedWidget.of<T>(context);
 }
 
+/// Mixin for providing access to the [WidgetModel] in [StatelessWidget] from the [buildWithWm] method.
+///
+/// So you should implement the [buildWithWm] method instead of [build].
+///
+/// Make sure to use this mixin only with widgets that have a [ElementaryWidget] ancestor.
+mixin WMStless<T extends IWidgetModel> on StatelessWidget {
+  /// Build the widget with the [WidgetModel].
+  Widget buildWithWm(BuildContext context, T wm);
+
+  @override
+  Widget build(BuildContext context) {
+    return buildWithWm(context, WMInheritedWidget.of<T>(context));
+  }
+}
+
+/// Mixin for providing access to the [WidgetModel] in [State] of [StatefulWidget] from the [buildWithWm] method.
+///
+/// So you should implement the [buildWithWm] method instead of [build].
+mixin WMStful<T extends IWidgetModel, W extends StatefulWidget> on State<W> {
+  /// Build the widget with the [WidgetModel].
+  Widget buildWithWm(BuildContext context, T wm);
+
+  @override
+  Widget build(BuildContext context) {
+    return buildWithWm(context, WMInheritedWidget.of<T>(context));
+  }
+}
+
 /// An element for managing a widget whose display depends on the Widget Model.
 final class Elementary extends ComponentElement {
   @override
   ElementaryWidget get widget => super.widget as ElementaryWidget;
 
-  final IWidgetModel _wm;
+  late IWidgetModel _wm;
 
   // private _firstBuild hack
   bool _isInitialized = false;
 
   /// Create an instance of Elementary.
-  Elementary(ElementaryWidget widget, this._wm) : super(widget);
+  Elementary(ElementaryWidget widget) : super(widget);
 
   @override
   Widget build() {
@@ -510,13 +613,16 @@ final class Elementary extends ComponentElement {
     super.update(newWidget);
 
     final oldWidget = _wm._widget;
-    _wm._widget = newWidget;
-    if (oldWidget != null) _wm.didUpdateWidget(oldWidget);
+    if (oldWidget == null) return;
+    _wm
+      .._widget = newWidget
+      ..didUpdateWidget(oldWidget);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+
     _wm.didChangeDependencies();
   }
 
@@ -548,6 +654,7 @@ final class Elementary extends ComponentElement {
   void performRebuild() {
     // private _firstBuild hack
     if (!_isInitialized) {
+      _wm = widget.wmFactory(this);
       _wm
         .._element = this
         .._widget = widget
@@ -563,6 +670,7 @@ final class Elementary extends ComponentElement {
   @override
   void reassemble() {
     super.reassemble();
+
     _wm.reassemble();
   }
 
@@ -570,13 +678,21 @@ final class Elementary extends ComponentElement {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
 
-    properties.add(
-      DiagnosticsProperty<IWidgetModel>(
-        'widget model',
-        _wm,
-        defaultValue: null,
-      ),
-    );
+    properties
+      ..add(
+        DiagnosticsProperty<IWidgetModel>(
+          'widget model',
+          _wm,
+          defaultValue: null,
+        ),
+      )
+      ..add(
+        DiagnosticsProperty<ElementaryModel>(
+          'model',
+          _wm._model,
+          defaultValue: null,
+        ),
+      );
   }
 }
 
@@ -589,6 +705,9 @@ mixin MockWidgetModelMixin implements WidgetModel {
 
   @override
   set _widget(ElementaryWidget? _) {}
+
+  @override
+  ElementaryModel get model => _StubModel();
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
@@ -648,6 +767,5 @@ abstract class ElementaryModel {
     _wmHandler = function;
   }
 }
-
 
 class _StubModel extends ElementaryModel {}

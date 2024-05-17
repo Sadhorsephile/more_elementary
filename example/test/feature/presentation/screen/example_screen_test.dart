@@ -17,7 +17,7 @@ void main() {
   final someComponentWM = SomeComponentWMMock();
 
   setUpAll(() {
-    when(() => wm.someComponentWM).thenReturn(someComponentWM);
+    when(() => wm.someComponentWM).thenReturn((_) => someComponentWM);
     when(() => wm.title).thenReturn('title');
     when(() => wm.filterController).thenReturn(TextEditingController(text: 'filter'));
     when(() => wm.todoData).thenReturn(UnionStateNotifier.failure());
@@ -25,7 +25,7 @@ void main() {
   });
 
   testWidget(
-    widgetBuilder: (_, __) => ExampleScreen(wm),
+    widgetBuilder: (_, __) => ExampleScreen((_) => wm),
     customPump: (p0) => p0.pumpAndSettle(const Duration(milliseconds: 500)),
   );
 }

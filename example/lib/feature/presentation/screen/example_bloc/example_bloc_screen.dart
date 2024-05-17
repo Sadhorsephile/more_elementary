@@ -13,10 +13,10 @@ class ExampleBlocScreen extends ElementaryWidget<IExampleBlocWM> {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, IExampleBlocWM wm) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(wm(context).title),
+        title: Text(wm.title),
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(48),
           child: _FilterPanel(),
@@ -35,7 +35,7 @@ class _TodosList extends StatelessWidget with WMContext<IExampleBlocWM> {
     return BlocBuilder<StateStreamable<TodoListState>, TodoListState>(
       bloc: wm(context).todoData,
       builder: (_, state) => switch (state) {
-        LoadingTodoListState() => Center(child: SomeComponent(wm(context).someComponentWM)),
+        LoadingTodoListState() => Center(child: SomeComponent((_) => wm(context).someComponentWM)),
         LoadedTodoListState(:final todos) => ValueListenableBuilder(
             valueListenable: wm(context).processingStatusTodoIds,
             builder: (_, processingIds, __) => ListView.builder(

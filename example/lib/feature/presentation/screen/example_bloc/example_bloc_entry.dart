@@ -16,7 +16,7 @@ class ExampleBlocEntry extends StatelessWidget {
   Widget build(BuildContext context) {
     final service = context.read<ITodoService>();
     return ExampleBlocScreen(
-      ExampleBlocWM(
+      (_) => ExampleBlocWM(
         title: title,
         someComponentWM: SomeComponentWM(title: '...Loading'),
         todoData: TodoListBloc(service),

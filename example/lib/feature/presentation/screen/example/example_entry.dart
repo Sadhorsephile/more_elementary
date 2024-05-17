@@ -13,9 +13,9 @@ class ExampleEntry extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ExampleScreen(
-      ExampleWM(
+      (_) => ExampleWM(
         title: title,
-        someComponentWM: SomeComponentWM(title: '...Loading'),
+        someComponentWM: (_) => SomeComponentWM(title: '...Loading'),
         todoService: context.read<ITodoService>(),
       ),
     );
