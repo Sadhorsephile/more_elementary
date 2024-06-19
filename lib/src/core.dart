@@ -545,7 +545,9 @@ class WMInheritedWidget<T extends IWidgetModel> extends InheritedWidget {
   static T of<T extends IWidgetModel>(BuildContext context) {
     final widget = context.dependOnInheritedWidgetOfExactType<WMInheritedWidget<T>>();
     if (widget == null) {
-      throw FlutterError('WMInheritedWidget.of() called with a context that does not contain a WidgetModel.');
+      throw FlutterError(
+        'WMInheritedWidget.of() called with a context that does not contain a WidgetModel.',
+      );
     }
     return widget.wm;
   }
@@ -699,7 +701,8 @@ final class Elementary extends ComponentElement {
 /// Mock that helps to prevent [NoSuchMethodError] exception when the
 /// WidgetModel is mocked.
 @visibleForTesting
-mixin MockWidgetModelMixin implements WidgetModel {
+mixin MockWidgetModelMixin<W extends ElementaryWidget, M extends ElementaryModel>
+    implements WidgetModel<W, M> {
   @override
   set _element(BuildContext? _) {}
 
@@ -707,7 +710,10 @@ mixin MockWidgetModelMixin implements WidgetModel {
   set _widget(ElementaryWidget? _) {}
 
   @override
-  ElementaryModel get model => _StubModel();
+  ElementaryWidget get _widget => widget;
+
+  @override
+  M get _model => model;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
@@ -769,3 +775,11 @@ abstract class ElementaryModel {
 }
 
 class _StubModel extends ElementaryModel {}
+
+/// Mock that helps to prevent [NoSuchMethodError] exception when the
+/// ElementaryModel is mocked.
+@visibleForTesting
+mixin MockElementaryModelMixin implements ElementaryModel {
+  @override
+  set _wmHandler(void Function(Object, StackTrace?)? _) {}
+}
